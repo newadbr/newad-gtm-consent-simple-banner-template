@@ -545,102 +545,77 @@ ___TEMPLATE_PARAMETERS___
 
 ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
-const setDefaultConsentState = require('setDefaultConsentState');
-const updateConsentState = require('updateConsentState');
-const gtagSet = require('gtagSet');
-const getCookieValues = require('getCookieValues');
-const setCookie = require('setCookie');
-const injectScript = require('injectScript');
-const encodeUriComponent = require('encodeUriComponent');
-const BANNER_TEXT_COOKIE_NAME = 'NWD_BANNER_TEXTS';
-
-const CONSENT_KEYS = [
-  'ad_storage',
-  'analytics_storage',
-  'functionality_storage',
-  'personalization_storage',
-  'security_storage',
-  'ad_user_data',
-  'ad_personalization'
-];
-
-const splitInput = (input) => {
-  return (input || '').split(',')
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length !== 0);
+var setDefaultConsentState = require('setDefaultConsentState');
+var updateConsentState = require('updateConsentState');
+var gtagSet = require('gtagSet');
+var getCookieValues = require('getCookieValues');
+var setCookie = require('setCookie');
+var injectScript = require('injectScript');
+var encodeUriComponent = require('encodeUriComponent');
+var BANNER_TEXT_COOKIE_NAME = 'NWD_BANNER_TEXTS';
+var CONSENT_KEYS = ['ad_storage', 'analytics_storage', 'functionality_storage', 'personalization_storage', 'security_storage', 'ad_user_data', 'ad_personalization'];
+var splitInput = function splitInput(input) {
+  return (input || '').split(',').map(function (entry) {
+    return entry.trim();
+  }).filter(function (entry) {
+    return entry.length !== 0;
+  });
 };
-
-const isConsentValue = (value) => value === 'granted' || value === 'denied';
-
-const getCookieName = () => {
+var isConsentValue = function isConsentValue(value) {
+  return value === 'granted' || value === 'denied';
+};
+var getCookieName = function getCookieName() {
   if (data.cookieNameVar && data.cookieNameVar.length > 0) {
     return data.cookieNameVar;
   }
   return 'NWD_CID';
 };
-
-const getConsentCookie = () => {
-  const cookieName = getCookieName();
-  const values = getCookieValues(cookieName);
+var getConsentCookie = function getConsentCookie() {
+  var cookieName = getCookieName();
+  var values = getCookieValues(cookieName);
   if (values && values.length > 0) {
     return values[0];
   }
   return '';
 };
-
-const setConsentCookie = (value) => {
+var setConsentCookie = function setConsentCookie(value) {
   setCookie(getCookieName(), value, {
     maxAgeSeconds: 31536000,
     path: '/'
   });
 };
-
-const setBannerTextCookie = () => {
-  const title = data.bannerTitle || 'Usamos cookies para melhorar sua experiência';
-  const description = data.bannerDescription || 'Utilizamos cookies para medir audiência, personalizar conteúdo e entregar anúncios relevantes.';
-  const value = [
-    'title=' + encodeUriComponent(title),
-    'description=' + encodeUriComponent(description)
-  ].join('&');
-
+var setBannerTextCookie = function setBannerTextCookie() {
+  var title = data.bannerTitle || 'Usamos cookies para melhorar sua experiência';
+  var description = data.bannerDescription || 'Utilizamos cookies para medir audiência, personalizar conteúdo e entregar anúncios relevantes.';
+  var value = ['title=' + encodeUriComponent(title), 'description=' + encodeUriComponent(description)].join('&');
   setCookie(BANNER_TEXT_COOKIE_NAME, value, {
     maxAgeSeconds: 31536000,
     path: '/'
   });
 };
-
-const parseConsentCookieValue = (cookieValue) => {
-  const commandData = {};
+var parseConsentCookieValue = function parseConsentCookieValue(cookieValue) {
+  var commandData = {};
   if (!cookieValue) {
     return commandData;
   }
-
-  const normalizedValue = cookieValue.indexOf('consents=') === 0 ?
-    cookieValue.substring('consents='.length) :
-    cookieValue;
-  const entries = normalizedValue.split('|');
-
-  let hasNamedPairs = false;
-  entries.forEach((entry) => {
-    const pair = entry.split('=');
+  var normalizedValue = cookieValue.indexOf('consents=') === 0 ? cookieValue.substring('consents='.length) : cookieValue;
+  var entries = normalizedValue.split('|');
+  var hasNamedPairs = false;
+  entries.forEach(function (entry) {
+    var pair = entry.split('=');
     if (pair.length !== 2) {
       return;
     }
-
-    const key = pair[0].trim();
-    const value = pair[1].trim();
+    var key = pair[0].trim();
+    var value = pair[1].trim();
     if (CONSENT_KEYS.indexOf(key) !== -1 && isConsentValue(value)) {
       commandData[key] = value;
       hasNamedPairs = true;
     }
   });
-
   if (hasNamedPairs) {
     return commandData;
   }
-
-  // Backward compatible parser:
-  // consents=<ad_storage>|<analytics_storage>|<ad_user_data>
   if (entries.length > 0 && isConsentValue(entries[0])) {
     commandData.ad_storage = entries[0];
   }
@@ -650,24 +625,20 @@ const parseConsentCookieValue = (cookieValue) => {
   if (entries.length > 2 && isConsentValue(entries[2])) {
     commandData.ad_user_data = entries[2];
   }
-
   return commandData;
 };
-
-const serializeConsentCookieValue = (consentState) => {
-  const entries = [];
-  CONSENT_KEYS.forEach((key) => {
+var serializeConsentCookieValue = function serializeConsentCookieValue(consentState) {
+  var entries = [];
+  CONSENT_KEYS.forEach(function (key) {
     if (isConsentValue(consentState[key])) {
       entries.push(key + '=' + consentState[key]);
     }
   });
   return 'consents=' + entries.join('|');
 };
-
-const parseDefaultCommandData = (settings) => {
-  const regions = splitInput(settings.region);
-  const commandData = {};
-
+var parseDefaultCommandData = function parseDefaultCommandData(settings) {
+  var regions = splitInput(settings.region);
+  var commandData = {};
   if (regions.length > 0) {
     commandData.region = regions;
   }
@@ -694,9 +665,8 @@ const parseDefaultCommandData = (settings) => {
   }
   return commandData;
 };
-
-const parseUpdateCommandData = () => {
-  const commandData = {};
+var parseUpdateCommandData = function parseUpdateCommandData() {
+  var commandData = {};
   if (isConsentValue(data.adStorageUpdate)) {
     commandData.ad_storage = data.adStorageUpdate;
   }
@@ -720,76 +690,60 @@ const parseUpdateCommandData = () => {
   }
   return commandData;
 };
-
-const hasAnyKey = (obj) => {
-  for (const key in obj) {
+var hasAnyKey = function hasAnyKey(obj) {
+  for (var key in obj) {
     if (key) {
       return true;
     }
   }
   return false;
 };
-
-const renderConsentBanner = () => {
-  const baseUrl = data.bannerScriptUrl || '';
+var renderConsentBanner = function renderConsentBanner() {
+  var baseUrl = data.bannerScriptUrl || '';
   if (baseUrl.indexOf('https://') !== 0) {
     return;
   }
-
-  const separator = baseUrl.indexOf('?') === -1 ? '?' : '&';
-  const params = [
-    'title=' + encodeUriComponent(data.bannerTitle || 'Usamos cookies para melhorar sua experiência'),
-    'description=' + encodeUriComponent(data.bannerDescription || 'Utilizamos cookies para medir audiência, personalizar conteúdo e entregar anúncios relevantes.'),
-    'cookie_name=' + encodeUriComponent(getCookieName())
-  ].join('&');
-  const scriptUrl = baseUrl + separator + params;
-  injectScript(scriptUrl, () => {}, () => {});
+  var separator = baseUrl.indexOf('?') === -1 ? '?' : '&';
+  var params = ['title=' + encodeUriComponent(data.bannerTitle || 'Usamos cookies para melhorar sua experiência'), 'description=' + encodeUriComponent(data.bannerDescription || 'Utilizamos cookies para medir audiência, personalizar conteúdo e entregar anúncios relevantes.'), 'cookie_name=' + encodeUriComponent(getCookieName())].join('&');
+  var scriptUrl = baseUrl + separator + params;
+  injectScript(scriptUrl, function () {}, function () {});
 };
-
-const processData = () => {
+var processData = function processData() {
   if (data.command === 'default') {
     setBannerTextCookie();
-
-    (data.defaultSettings || []).forEach((settings) => {
-      const commandData = parseDefaultCommandData(settings);
+    (data.defaultSettings || []).forEach(function (settings) {
+      var commandData = parseDefaultCommandData(settings);
       if (data.waitForUpdate > 0) {
         commandData.wait_for_update = data.waitForUpdate;
       }
       setDefaultConsentState(commandData);
     });
-
-    const persistedConsent = parseConsentCookieValue(getConsentCookie());
+    var persistedConsent = parseConsentCookieValue(getConsentCookie());
     if (hasAnyKey(persistedConsent)) {
       updateConsentState(persistedConsent);
     }
-
     gtagSet('ads_data_redaction', data.adsDataRedaction === true);
     gtagSet('url_passthrough', data.urlThroughpass === true);
-
     if (data.enableBanner === true && !getConsentCookie()) {
       renderConsentBanner();
     }
   }
-
   if (data.command === 'update') {
-    const commandData = parseUpdateCommandData();
+    var commandData = parseUpdateCommandData();
     if (hasAnyKey(commandData)) {
       updateConsentState(commandData);
-
-      const persistedConsent = parseConsentCookieValue(getConsentCookie());
-      CONSENT_KEYS.forEach((key) => {
+      var _persistedConsent = parseConsentCookieValue(getConsentCookie());
+      CONSENT_KEYS.forEach(function (key) {
         if (isConsentValue(commandData[key])) {
-          persistedConsent[key] = commandData[key];
+          _persistedConsent[key] = commandData[key];
         }
       });
-      setConsentCookie(serializeConsentCookieValue(persistedConsent));
+      setConsentCookie(serializeConsentCookieValue(_persistedConsent));
     }
   }
 };
-
 processData();
 data.gtmOnSuccess();
-
 ___WEB_PERMISSIONS___
 
 [
