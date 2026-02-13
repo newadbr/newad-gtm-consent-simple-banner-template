@@ -1,5 +1,5 @@
 homepage: "https://newad.com.br/"
 documentation: "https://github.com/newadbr/newad-gtm-consent-simple-banner-template#readme"
 versions:
-  - sha: b478675990b0172c32788a5c97015448a941a2de
+  - sha: bd39eccf0e83408271f5863f2258829d51590ae0
     changeNotes: Initial release.
